@@ -23,7 +23,7 @@ let vm
 import {
   SERVICE_TEXT,
   BG_SERVICE_LABEL,
-  APP_SERVICE_LABEL,SGV_TREND_IMAGE,STALE_TEXT,
+  APP_SERVICE_LABEL,SGV_TREND_IMAGE,BG_STALE_RECT,UNITS_TEXT,
   SGV_TEXT,DATE_TEXT,DELTA_TEXT,DIRECTION_TEXT
 } from "zosLoader:./style.[pf].layout.js";
 import { notify } from "@zos/notification";
@@ -136,7 +136,8 @@ Page({
       deltaLabel: null,
       timeSensor:null,
       SVG_TREND_IMG:null,
-      staleLabel:null
+      staleLabel:null,
+      unitsLabel
     },
     build() {
       //localStorage = new LocalStorage();
@@ -170,6 +171,10 @@ Page({
           ...SGV_TEXT,
           text: "Waiting for Data"
         });
+        vm.state.unitsLabel = hmUI.createWidget(hmUI.widget.TEXT, {
+          ...UNITS_TEXT,
+          text: "Waiting for Data"
+        });
         vm.state.dateLabel = hmUI.createWidget(hmUI.widget.TEXT, {
           ...DATE_TEXT,
           text: "Waiting for Data"
@@ -178,10 +183,7 @@ Page({
           ...DELTA_TEXT,
           text: "Waiting for Data"
         });
-        vm.state.staleLabel = hmUI.createWidget(hmUI.widget.TEXT, {
-          ...STALE_TEXT,
-          text: "____________________"
-        });
+       vm.state.staleLabel = hmUI.createWidget(hmUI.widget.FILL_RECT, BG_STALE_RECT);
         /*vm.state.directionLabel = hmUI.createWidget(hmUI.widget.TEXT, {
           ...DIRECTION_TEXT,
           text: "Waiting for Data"
@@ -236,13 +238,14 @@ Page({
     console.log(this.getArrowResource(localStorage.getItem('SGV_DIRECTION').toString()))
     vm.state.SVG_TREND_IMG.setProperty(hmUI.prop.MORE,{src: this.getArrowResource(localStorage.getItem('SGV_DIRECTION').toString())});
 
-    setProperty(vm.state.sgvLabel,hmUI.prop.TEXT,` ${localStorage.getItem('SGV_NOW').toString()} mg/dl`);
+    setProperty(vm.state.sgvLabel,hmUI.prop.TEXT,` ${localStorage.getItem('SGV_NOW').toString()}`);
     setProperty(vm.state.APP_Label,hmUI.prop.TEXT,txtResource.APP_STATUS[localStorage.getItem('SIDE_SERVICE_STATUS')]);
     setProperty(vm.state.dateLabel,hmUI.prop.TEXT,`Time: ${this.getTimeAgo(localStorage.getItem('SGV_DATE'))}`);
     setProperty(vm.state.deltaLabel,hmUI.prop.TEXT,`Delta: ${localStorage.getItem('SGV_DELTA').toString()}`);
+    setProperty(vm.state.unitsLabel,hmUI.prop.TEXT,` ${localStorage.getItem('UNIT_HINT').toString()}`);
     //setProperty(vm.state.directionLabel,hmUI.prop.TEXT,`Direction: ${localStorage.getItem('SGV_DIRECTION').toString()}`);
     setProperty(vm.state.staleLabel,hmUI.prop.VISIBLE,!localStorage.getItem('SIDE_SERVICE_STATUS'));
-    console.log("Page got SGV_Data, to: " + localStorage.getItem('SGV_DATE')+localStorage.getItem('SGV_DELTA').toString()+localStorage.getItem('SGV_DIRECTION').toString())
+    console.log("Page got SGV_Data: @" + localStorage.getItem('SGV_DATE'))
 
 
 

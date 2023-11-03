@@ -219,7 +219,7 @@ export const DELTA_TEXT = {
   w: px(460),
  // h: px(50),
   text_style: text_style.NONE,
-  text_size: px(20),
+  text_size: px(32),
   align_h: hmUI.align.CENTER_H,
   color: 0xffffff,
   //font: 'fonts/DS-DIGI.ttf'
@@ -236,26 +236,34 @@ export const DIRECTION_TEXT = {
   //font: 'fonts/DS-DIGI.ttf'
 };
 export const SGV_TEXT = {
-  x: px(110),
+  x: px(80),
   y: px(190),
-  w: px(320),
+  w: px(200),
   //h: px(250),
   text_style: text_style.NONE,
   text_size: px(60),
- // align_h: hmUI.align.CENTER_H,
+  align_h: hmUI.align.RIGHT,
   color: 0xffffff,
   //font: 'fonts/DS-DIGI.ttf'
 };
-export const STALE_TEXT = {
-  x: px(110),
-  y: px(165),
-  w: px(320),
+export const UNITS_TEXT = {
+  x: px(285),
+  y: px(190),
+  w: px(195),
   //h: px(250),
   text_style: text_style.NONE,
   text_size: px(60),
- // align_h: hmUI.align.CENTER_H,
+  align_h: hmUI.align.LEFT,
   color: 0xffffff,
   //font: 'fonts/DS-DIGI.ttf'
+};
+export const BG_STALE_RECT = {
+  x: (DEVICE_WIDTH - px(240)) / 2,
+  y: px(235),
+  w: DEVICE_WIDTH,
+  h: px(5),
+  color: 0xffffff,
+  visible: true,
 };
 
 export const BG_SERVICE_LABEL = {
@@ -288,7 +296,7 @@ export const SERVICE_BTN = {
 
 export const SGV_TREND_IMAGE = {
   src: 'None.png',
-  x: px(20),
+  x: px(30),
   y: px(210),
   w: px(50),
   h: px(50),

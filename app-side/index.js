@@ -84,12 +84,15 @@ function myCallback(a,ctx){
   //logger.log(b);
   FetchDataFromWebService(ctx);
   
-  if (ctx.gobalData.sgv!=settingsLib.getItem('LastSGV-Data'))
+  let sgvJson = typeof ctx.gobalData.sgv === 'string' ? JSON.parse(ctx.gobalData.sgv) : ctx.gobalData.sgv
+  logger.log('App-Side got last SGV Value from Webservice @: ' + sgvJson['date'])
+
+  if (sgvJson['date']!=settingsLib.getItem('LastSGV-Data'))
   {
-  settingsLib.setItem('LastSGV-Data', ctx.gobalData.sgv)
+  settingsLib.setItem('LastSGV-Data', sgvJson['date'])
   logger.log('New Values recieved, sending to watch: ' + ctx.gobalData.sgv)
-  notifyDevice(ctx, ctx.gobalData.sgv);  
-  }
+  if (ctx.gobalData.sgv != null) notifyDevice(ctx, ctx.gobalData.sgv);
+    }
   else  logger.log('Old Values Recieved: ' + ctx.gobalData.sgv)
 };
 
@@ -131,12 +134,31 @@ async function Stopservice(res) {
 
 function notifyDevice(ctx, data_to_send) {
   
-  logger.log('sending data',data_to_send)
+  logger.log('App-Side sending data: ',data_to_send)
 // if (data_to_send != undefined)
  //{
   ctx.call({method: 'SGV_DATA', params: data_to_send})     
  //}
 };
+/*function getDataFromDevice(ctx, data_to_send) {
+  logger.log("App-Side-Service: Sending Data to watch with Request")
+  return ctx.request({
+    method: 'SGV_DATA',
+    params: {
+      param1: 'SGV_DATA',
+      param2: data_to_send
+    }
+  })
+    .then((result) => {
+      // receive your data
+      if (result===data_to_send){logger.log("App-Side-Service: Watch successfully received data")}
+      logger.log('result=>', result)
+    })
+    .catch((error) => {
+      // receive your error
+      console.error('error=>', error)
+    })
+}*/
 
 
 AppSideService(
@@ -206,28 +228,13 @@ AppSideService(
       MyTimerID=setInterval(myCallback, 1000*10, "MyTimerID: Callback updating data from webservice",ctx);
 
     },
-   /* getDataFromDevice() {
-      return this.request({
-        method: 'your.method2',
-        params: {
-          param1: 'param1',
-          param2: 'param2'
-        }
-      })
-        .then((result) => {
-          // receive your data
-          logger.log('result=>', result)
-        })
-        .catch((error) => {
-          // receive your error
-          console.error('error=>', error)
-        })
-    },*/
+    
     
 
     onDestroy() {
       logger.log("Service Destroy");
-      clearInterval(this.gobalData.MyTimerID);
+      this.onRun()//clearInterval(this.gobalData.MyTimerID);
+      return
     },
   })
 );

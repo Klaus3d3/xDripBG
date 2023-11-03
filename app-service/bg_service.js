@@ -25,7 +25,7 @@ AppService({
   
   
   onEvent(e) {
-    console.log(`xDrip BG-Service onEvent(${e})`);
+    console.log(`xDrip BG-service: onEvent(${e})`);
     let result = parseQuery(e);
     if (result.action === "exit") {
       this.StopPhoneService();
@@ -35,15 +35,15 @@ AppService({
   },
   onInit(e) {
     
-    console.log("BG-Service On Innit invoked")
-    console.log("xDrip BG-service",`service onInit(${e})`);
+    
+    console.log("xDrip BG-service:",`service onInit(${e})`);
     this.StartPhoneService();
     //this.notifyMobile();
-    this.onMessage();
+    this.MakeMBListen();
     timeSensor.onPerMinute(() => {
       //eventBus.emit('SGV_DATA_UPDATE', 'Hello Zepp OS!')
       if ((timeSensor.getTime()-localStorage.getItem('SGV_DATE'))>1000*60*10){
-      console.log(`${'BG-Service: App-Side WakeUp'} time report: ${timeSensor.getHours()}:${timeSensor.getMinutes()}:${timeSensor.getSeconds()}`);
+      console.log(`${'BxDrip BG-service: App-Side WakeUp'} time report: ${timeSensor.getHours()}:${timeSensor.getMinutes()}:${timeSensor.getSeconds()}`);
       messageBuilder.connect();
       this.StartPhoneService();
       localStorage.setItem('SIDE_SERVICE_STATUS',false);
@@ -53,18 +53,18 @@ AppService({
   },
 
   StartPhoneService() {
-    console.log("Try to start Side Service: ");
+    console.log("xDrip BG-service: Try to start Side Service: ");
     messageBuilder.request({
       method: "START_PHONE_SERVICE",
     })
       .then((data) => {
-        console.log("Starting Service");
+        console.log("xDrip BG-service: Starting Service");
         const { result = {} } = data;
         const { text } = result;
-        console.log("Starting Service Result: ", text);
+        console.log("xDrip BG-service: Starting Service Result: ", text);
             
       })
-      .catch((res) => {console.log("Starting Service Result: ", res);});
+      .catch((res) => {console.log("xDrip BG-service: Starting Service Result: ", res);});
   },
   StopPhoneService() {
     console.log("Try to stop Side Service: ");
@@ -74,19 +74,18 @@ AppService({
       .then((data) => {
         const { result = {} } = data;
         const { text } = result;
-        console.log("Stopping Service Result: ", text);
+        console.log("xDrip BG-service: Stopping Service Result: ", text);
       })
       .catch((res) => {});
   },
-  onMessage() {
-    console.log("xDrip BG-service OnMessage invoked");
+  MakeMBListen() {
+    
     messageBuilder.on('call', ({ payload: buf }) => {
+      console.log("xDrip BG-service: MakeMBListen invoked");
       const data = messageBuilder.buf2Json(buf)
         if (data.method === 'SGV_DATA'){
         
-        //showToast({
-        //  content: 'Actual Glucose Value: ' + data.params,
-       // })
+        
         let sgvJson = typeof data.params === 'string' ? JSON.parse(data.params) : data.params
         
         try {
@@ -97,9 +96,11 @@ AppService({
             localStorage.setItem('SGV_DATE', sgvJson['date'])
             localStorage.setItem('SGV_DIRECTION', sgvJson['direction'])
             localStorage.setItem('SIDE_SERVICE_STATUS', true)
-            console.log('BG-Service: Actual Glucose Value: ', sgvJson['sgv'])
-            console.log("Saved Glucose: " + localStorage.getItem('SGV_NOW'))
-            //eventBus.emit('SGV_DATA_UPDATE', 'Hello Zepp OS!')
+            localStorage.setItem('UNIT_HINT', sgvJson['units_hint'])
+            
+            console.log('xDrip BG-service: Actual Glucose Value: ', sgvJson['sgv'])
+            console.log(" xDrip BG-service:Saved Glucose: " + localStorage.getItem('SGV_NOW'))
+           
           
         } catch (error) {
           console.log('BG-Service: Glucose ERROR: ', error)
@@ -110,6 +111,8 @@ AppService({
       
       }
     })
+
+    
   },
  
   notifyMobile() {

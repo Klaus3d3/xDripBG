@@ -1,5 +1,6 @@
 import { gettext } from 'i18n'
 import { DEFAULT_TODO_LIST } from './../utils/constants'
+import { settingsLib } from '@zeppos/zml/base-side'
 AppSettingsPage({
   state: {
     todoList: [],
@@ -84,7 +85,7 @@ AppSettingsPage({
                 TextInput({
                   label: '',
                   bold: true,
-                  value: item,
+                  value: settings.settingsStorage.getItem('LastSGV-Data'),
                   subStyle: {
                     color: '#333',
                     fontSize: '14px'
