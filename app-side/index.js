@@ -1,5 +1,8 @@
 import { BaseSideService } from "@zeppos/zml/base-side";
 import { settingsLib } from '@zeppos/zml/base-side'
+import { MessageBuilder } from '../shared/message-side'
+
+const messageBuilder = new MessageBuilder()
 
 const logger = Logger.getLogger('xDrip-app-side')
 
@@ -79,7 +82,7 @@ async function FetchDataFromWebService(ctx) {
 
 
 };
-function myCallback(a,ctx){
+function getSGVDataFromWeb(a,ctx){
   logger.log(a);
   //logger.log(b);
   FetchDataFromWebService(ctx);
@@ -87,13 +90,11 @@ function myCallback(a,ctx){
   let sgvJson = typeof ctx.gobalData.sgv === 'string' ? JSON.parse(ctx.gobalData.sgv) : ctx.gobalData.sgv
   logger.log('App-Side got last SGV Value from Webservice @: ' + sgvJson['date'])
 
-  if (sgvJson['date']!=settingsLib.getItem('LastSGV-Data'))
-  {
+ 
   settingsLib.setItem('LastSGV-Data', sgvJson['date'])
   logger.log('New Values recieved, sending to watch: ' + ctx.gobalData.sgv)
-  if (ctx.gobalData.sgv != null) notifyDevice(ctx, ctx.gobalData.sgv);
-    }
-  else  logger.log('Old Values Recieved: ' + ctx.gobalData.sgv)
+  if (ctx.gobalData.sgv != null) return ctx.gobalData.sgv;
+   
 };
 
 async function Startservice(res) {
@@ -171,7 +172,10 @@ AppSideService(
   },
     
     onInit() {
-      
+     
+
+
+
       logger.log("App-Side-Service Init");
       ctx=this;
       //Startservice(this.gobalData.test);
@@ -217,6 +221,21 @@ AppSideService(
         Stopservice(res);
         
       }
+      if (req.method === "ARE_YOU_THERE?") {
+        logger.log("Got AreYouThere Question from Watch")
+        res(null, {
+          result: true,
+        });
+        
+      }
+      if (req.method === "SEND_SGV_DATA") {
+        logger.log("Got SEND_SGV_DATA Question from Watch")
+        res(null, {
+          SGV_DATA: getSGVDataFromWeb("FetchDataFromWeb",ctx),
+          
+        });
+      
+      }
 
     
 
@@ -225,15 +244,17 @@ AppSideService(
     onRun() {
       logger.log("App-Side Service Run");
       //Startservice('starting timer')
-      MyTimerID=setInterval(myCallback, 1000*10, "MyTimerID: Callback updating data from webservice",ctx);
-
+      //MyTimerID=setInterval(myCallback, 1000*10, "MyTimerID: Callback updating data from webservice",ctx);
+      notifyDevice(ctx,"Test")//getSGVDataFromWeb("FetchDataFromWeb",ctx))
+      ctx==undefined;
+      
     },
     
     
 
     onDestroy() {
       logger.log("Service Destroy");
-      this.onRun()//clearInterval(this.gobalData.MyTimerID);
+      //this.onRun()//clearInterval(this.gobalData.MyTimerID);
       return
     },
   })

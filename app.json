@@ -13,6 +13,7 @@
     "description": "Background Services to receive Glucose Data"
   },
   "permissions": [
+    "event:os.customize.fetchsgvdata",
     "event:os.bp.high",
     "event:os.bp.low",
     "event:os.bp.expires",
@@ -57,7 +58,10 @@
           "path": "app-side/index"
         },
         "app-service": {
-          "services": ["app-service/bg_service"]
+          "services": ["app-service/bg_service", "app-event/wf_service"]
+        },
+        "app-event": {
+          "path": "app-event/wf_service"
         },
         "setting": {
           "path": "setting/index"
@@ -80,5 +84,6 @@
       "appName": "xDripBG"
     }
   },
-  "defaultLanguage": "en-US"
+  "defaultLanguage": "en-US",
+  "debug": true
 }
