@@ -13,31 +13,8 @@
     "description": "Background Services to receive Glucose Data"
   },
   "permissions": [
-    "event:os.customize.fetchsgvdata",
-    "event:os.bp.high",
-    "event:os.bp.low",
-    "event:os.bp.expires",
-    "device:os.notification",
-    "event:os.health.sleep_status",
-    "event:os.health.heart_rate_abnl",
-    "event:os.weather.sun_rise",
-    "event:os.weather.sun_set",
-    "event:os.system.power_saving",
-    "event:os.system.theater_mode",
-    "event:os.system.no_disturb",
-    "event:customize.keyboard",
     "data:os.device.info",
-    "device:os.alarm",
-    "device:os.accelerometer",
-    "device:os.geolocation",
-    "device:os.gyroscope",
-    "device:os.compass",
-    "data:user.hd.sleep",
-    "data:user.hd.heart_rate",
-    "data:user.hd.spo2",
-    "data:user.hd.stress",
-    "device:os.bg_service",
-    "data:user.hd.workout",
+    "device:os.bg_service",   
     "device:os.ble",
     "device:os.local_storage"
   ],
@@ -58,11 +35,9 @@
           "path": "app-side/index"
         },
         "app-service": {
-          "services": ["app-service/bg_service", "app-event/wf_service"]
+          "services": ["app-service/bg_service"]
         },
-        "app-event": {
-          "path": "app-event/wf_service"
-        },
+        
         "setting": {
           "path": "setting/index"
         }

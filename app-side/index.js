@@ -6,55 +6,12 @@ const messageBuilder = new MessageBuilder()
 
 const logger = Logger.getLogger('xDrip-app-side')
 
-const padStart = (str, maxLength, fillStr = "0") => {
-  return str.toString().padStart(maxLength, fillStr);
-};
+
 
 let  sgv_now, ctx, MyTimerID
 
 
 
-const formatDate = (date = new Date()) => {
-  const y = date.getFullYear();
-  const m = date.getMonth() + 1;
-  const d = date.getDate();
-  const h = date.getHours();
-  const mm = date.getMinutes();
-  const s = date.getSeconds();
-
-  return `${y}-${padStart(m, 2)}-${padStart(d, 2)} ${padStart(h, 2)}:${padStart(
-    mm,
-    2
-  )}:${padStart(s, 2)}`;
-};
-// Simulating an asynchronous network request using Promise
-async function StartS() {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve({
-        body: {
-          data: {
-            text:  "awaiting data",
-          },
-        },
-      });
-    }, 100);
-  });
-};
-
-async function StopS() {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve({
-        body: {
-          data: {
-            text: "Phone Service stopped @ " + formatDate(),
-          },
-        },
-      });
-    }, 100);
-  });
-};
 
 
 
@@ -73,7 +30,7 @@ async function FetchDataFromWebService(ctx) {
   if (result.ok) {
     
     const fetchedJson = typeof result.body === 'string' ? JSON.parse(result.body) : result.body
-    ctx.gobalData.sgv = JSON.stringify(fetchedJson[0]);
+    ctx.globalData.sgv = JSON.stringify(fetchedJson[0]);
    
   }
   
@@ -87,85 +44,36 @@ function getSGVDataFromWeb(a,ctx){
   //logger.log(b);
   FetchDataFromWebService(ctx);
   
-  let sgvJson = typeof ctx.gobalData.sgv === 'string' ? JSON.parse(ctx.gobalData.sgv) : ctx.gobalData.sgv
+  let sgvJson = typeof ctx.globalData.sgv === 'string' ? JSON.parse(ctx.globalData.sgv) : ctx.globalData.sgv
   logger.log('App-Side got last SGV Value from Webservice @: ' + sgvJson['date'])
 
  
   settingsLib.setItem('LastSGV-Data', sgvJson['date'])
-  logger.log('New Values recieved, sending to watch: ' + ctx.gobalData.sgv)
-  if (ctx.gobalData.sgv != null) return ctx.gobalData.sgv;
+  logger.log('New Values recieved, sending to watch: ' + ctx.globalData.sgv)
+  if (ctx.globalData.sgv != null) return ctx.globalData.sgv;
    
 };
 
-async function Startservice(res) {
-  logger.log('StartService executed')
-  try {  
-    // A network request is simulated here
-    //myCallback('try Starting Service')
-    const { body: { data = {} } = {} } = await StartS();
 
-    res(null, {
-      result: data,
-    });
-  } catch (error) {
-    res(null, {
-      result: "ERROR",
-    });
-  }
-  //notifyDevice(ctx, 'Service started');
-  if (MyTimerID) clearInterval(MyTimerID)
-  MyTimerID=setInterval(myCallback, 1000*10, "MyTimerID: Callback updating data from webservice",ctx);
-};
 
-async function Stopservice(res) {
-  try {  
-    // A network request is simulated here
-    const { body: { data = {} } = {} } = await StopS();
 
-    res(null, {
-      result: data,
-    });
-  } catch (error) {
-    res(null, {
-      result: "ERROR",
-    });
-  }
-  clearInterval(MyTimerID); 
-};
 
-function notifyDevice(ctx, data_to_send) {
-  
-  logger.log('App-Side sending data: ',data_to_send)
-// if (data_to_send != undefined)
- //{
-  ctx.call({method: 'SGV_DATA', params: data_to_send})     
- //}
-};
-/*function getDataFromDevice(ctx, data_to_send) {
-  logger.log("App-Side-Service: Sending Data to watch with Request")
-  return ctx.request({
-    method: 'SGV_DATA',
-    params: {
-      param1: 'SGV_DATA',
-      param2: data_to_send
-    }
-  })
-    .then((result) => {
-      // receive your data
-      if (result===data_to_send){logger.log("App-Side-Service: Watch successfully received data")}
-      logger.log('result=>', result)
-    })
-    .catch((error) => {
-      // receive your error
-      console.error('error=>', error)
-    })
-}*/
+function myCallback(a,ctx){
+  FetchDataFromWebService(ctx);
+
+}
 
 
 AppSideService(
   BaseSideService({
-    gobalData:{
-      
+    globalData:{
+      sgv_value:null,
+      sgv_delta:null,
+      sgv_direction:null,
+      sgv_units:null,
+      sgv_date:null,
+      sgv_iob:null,
+
       sgv:null,
       test:"StartService",
       
@@ -185,7 +93,7 @@ AppSideService(
       logger.log(error);
     }
     
-    notifyDevice(this, "App-Side-Service Init");
+    //notifyDevice(this, "App-Side-Service Init");
     
     try {
       if (MyTimerID)clearInterval(MyTimerID)
@@ -198,17 +106,8 @@ AppSideService(
     
 
 
-  },
-    onCall(data) {
-       //no reply
-      if (data.method === 'your.method3') {
-        logger.log("WakeUp received");
-       
-      }
-        // do something
-       // clearInterval(MyTimerID);
-        //MyTimerID=setInterval(myCallback, 1000*10, "MyTimerID: Callback updating data from webservice",ctx);
-      //}
+ 
+    
     },
     onRequest(req, res) {
       logger.log("Service Request");
@@ -231,7 +130,7 @@ AppSideService(
       if (req.method === "SEND_SGV_DATA") {
         logger.log("Got SEND_SGV_DATA Question from Watch")
         res(null, {
-          SGV_DATA: getSGVDataFromWeb("FetchDataFromWeb",ctx),
+          SGV_DATA: ctx.globalData.sgv, //getSGVDataFromWeb("FetchDataFromWeb",ctx),
           
         });
       
@@ -245,8 +144,11 @@ AppSideService(
       logger.log("App-Side Service Run");
       //Startservice('starting timer')
       //MyTimerID=setInterval(myCallback, 1000*10, "MyTimerID: Callback updating data from webservice",ctx);
-      notifyDevice(ctx,"Test")//getSGVDataFromWeb("FetchDataFromWeb",ctx))
-      ctx==undefined;
+      //notifyDevice(ctx,"Test")//getSGVDataFromWeb("FetchDataFromWeb",ctx))
+      
+      if (MyTimerID) clearInterval(MyTimerID)
+      MyTimerID=setInterval(myCallback, 1000*10, "MyTimerID: Callback updating data from webservice",ctx);
+
       
     },
     

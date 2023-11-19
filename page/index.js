@@ -2,31 +2,22 @@ import hmUI from "@zos/ui";
 import { BasePage } from "@zeppos/zml/base-page";
 import * as appService from "@zos/app-service";
 import { queryPermission, requestPermission } from "@zos/app";
-import { replace } from "@zos/router";
+import { readFileSync } from "@zos/fs";
 const { messageBuilder } = getApp()._options.globalData
 import { showToast } from '@zos/interaction'
-//const { localStorage } = getApp()._options.globalData
-//import { EventBus } from '@zos/utils'
-import { LocalStorage } from '@zos/storage'
 import {niceTime} from "../shared/date"
 import { Time } from "@zos/sensor";
-//const timeSensor=new Time;
-import { exit } from '@zos/router'
-//import {isAppSideRunning} from "../app-service/bg_service"
-import { emitCustomSystemEvent } from '@zos/app'
-import ui from '@zos/ui'
 
 
 
-const localStorage = new LocalStorage();
 let vm
 
-//const defaultValue = localStorage.getItem('none_key', 'Not Data, yet')
+
 
 import {
   SERVICE_TEXT,
   BG_SERVICE_LABEL,
-  APP_SERVICE_LABEL,SGV_TREND_IMAGE,BG_STALE_RECT,UNITS_TEXT,
+  APP_SERVICE_LABEL,SGV_TREND_IMAGE,BG_STALE_RECT,UNITS_TEXT,ALARM_SWITCH,
   SGV_TEXT,DATE_TEXT,DELTA_TEXT
 } from "zosLoader:./style.[pf].layout.js";
 import { notify } from "@zos/notification";
@@ -48,7 +39,10 @@ const txtResource = {
 };
 
 
-const permissions = ["device:os.bg_service","device:os.local_storage"];
+
+
+
+const permissions = ["device:os.bg_service"];
 
 function setProperty(w, p, v) {
   w.setProperty(p, v);
@@ -78,25 +72,19 @@ function startBGService(vm,action) {
     url: serviceFile,
     param: `service=${serviceFile}&action=${action}`,
     complete_func: (info) => {
-      console.log(`BG-Service STart result1: ` + JSON.stringify(info));
+      console.log(`BG-Service Start result: ` + JSON.stringify(info));
       //hmUI.showToast({ text: `start result: ${info.result}` });
       // refresh for button status
 
       if (info.result) {
         vm.state.running = true;
         
-        setProperty(
-          vm.state.BG_Label,
-          hmUI.prop.TEXT,
-          txtResource.BG_STATUS[vm.state.running]
-        );
-        
       }
     },
   });
 
   if (result) {
-    console.log("startService result2: ", result);
+    console.log("startService result: ", result);
   }
 }
 
@@ -112,18 +100,16 @@ function stopBGService(vm) {
 
       if (info.result) {
         vm.state.running = false;
-        setProperty(
-          vm.state.BG_Label,
-          hmUI.prop.TEXT,
-          txtResource.BG_STATUS[vm.state.running]
-        );
-        
+               
         };
       
     },
   });
 }
 
+function ab2str(buf) {
+  return String.fromCharCode.apply(null, new Uint8Array(buf));
+}
 
 
 Page({
@@ -135,7 +121,7 @@ Page({
       sgvLabel: null,
       sgv_now: null,
       dateLabel: null,
-      
+      alarm_switch:null,
       deltaLabel: null,
       timeSensor:null,
       SVG_TREND_IMG:null,
@@ -155,41 +141,62 @@ Page({
     },
 
     getDatafromBG(){
-      // isAppSideRunning()
       try {
-        vm.globalData.svg_value = localStorage.getItem('SGV_NOW').toString()
+        const contentBuffer = readFileSync({
+          path: 'xdripsgv.txt'
+        })
+        
+        str_result = ab2str(contentBuffer);
+        if (str_result.length>0){
+        
+        const searchTerm = '}';
+        const indexOflast = str_result.lastIndexOf(searchTerm);
+
+        vm.globalData.sgv= JSON.parse(str_result.substring(0,indexOflast+1));
+        console.log('Read Data from FS: =>', vm.globalData.sgv['sgv'].toString())
+       }
+               
+      } catch (error) {
+        console.log("xDripPage error while reading FS ", error )
+      }
+
+      try {
+        vm.globalData.svg_value = vm.globalData.sgv['sgv'].toString()
         } catch (error) {
           vm.globalData.svg_value = 'No Data'
+          console.log("Achtung dies ist ein Fehler: SGV " + error)
         }
+        
         try {
-          vm.globalData.svg_appStatus = localStorage.getItem('SIDE_SERVICE_STATUS')
-          } catch (error) {
-            console.log(error)
-            vm.globalData.svg_appStatus = false
-        }
-        try {
-          vm.globalData.svg_delta = `Delta: ${localStorage.getItem('SGV_DELTA').toString()}`
+          vm.globalData.svg_delta = `Delta: ${vm.globalData.sgv['delta'].toString()}`
         } catch (error) {
           vm.globalData.svg_delta = 'Delta: No Data'
+          console.log("Achtung dies ist ein Fehler: DELTA" + error)
         }
         try {
-          vm.globalData.svg_direction = this.getArrowResource(localStorage.getItem('SGV_DIRECTION').toString());
+          vm.globalData.svg_direction = this.getArrowResource(vm.globalData.sgv['direction']);
         } catch (error) {
           vm.globalData.svg_direction = this.getArrowResource('None');
+          console.log("Achtung dies ist ein Fehler: DIRECTION" + error)
         }
         try {
-          vm.globalData.svg_units = localStorage.getItem('UNIT_HINT').toString();
+          vm.globalData.svg_units = vm.globalData.sgv['units_hint'].toString();
         } catch (error) {
           vm.globalData.svg_units = 'No Data'
+          console.log("Achtung dies ist ein Fehler: UNITS" + error)
         }
         try {
-          vm.globalData.svg_date = `Time: ${this.getTimeAgo(localStorage.getItem('SGV_DATE'))}`
+          
+          vm.globalData.svg_date = `Time: ${this.getTimeAgo(vm.globalData.sgv['date'])}`
         } catch (error) {
           vm.globalData.svg_date = 'Time: No Data'
+          console.log("Achtung dies ist ein Fehler: DATE" + error)
         }
         try {
-          vm.globalData.svg_stale=localStorage.getItem('SGV_isStale')
-         
+          if ((vm.state.timeSensor.getTime()-vm.globalData.sgv['date'])<=1000*60*10) {
+            vm.globalData.svg_stale = false}
+          else {vm.globalData.svg_stale =true}
+          
         } catch (error) {
           console.log("Achtung dies ist ein Fehler: " + error)
           vm.globalData.svg_stale=true
@@ -198,36 +205,20 @@ Page({
 
     },
 
-    build() {
-      //localStorage = new LocalStorage();
-      vm = this;
-     
+    initView(){
 
       let services = appService.getAllAppServices();
       this.state.running = services.includes(serviceFile);
-  
-      console.log("service status %s", this.state.running);
-      if (!this.state.running)permissionRequest(vm);
+      
+      
+     // if (!this.state.running)permissionRequest(vm);
 
       this.getDatafromBG();
      
-      vm.state.BG_Label = hmUI.createWidget(hmUI.widget.TEXT, {
-        ...BG_SERVICE_LABEL,
-        text: txtResource.BG_STATUS[this.state.running],
-      });
-  
-      vm.state.APP_Label = hmUI.createWidget(hmUI.widget.TEXT, {
-        ...APP_SERVICE_LABEL,
-        text: txtResource.APP_STATUS[vm.globalData.svg_appStatus],
-
-      });
+      
       vm.state.SVG_TREND_IMG = hmUI.createWidget(hmUI.widget.IMG, {
         ...SGV_TREND_IMAGE, src: vm.globalData.svg_direction,       
       });
-      vm.state.SVG_TREND_IMG.addEventListener(ui.event.CLICK_UP, function (info) {
-        emitCustomSystemEvent('event.customize.fetchsgvdata');
-        console.log("Test")
-      })
       
            
         vm.state.sgvLabel = hmUI.createWidget(hmUI.widget.TEXT, {
@@ -250,9 +241,47 @@ Page({
          ...BG_STALE_RECT
          
        });
+      
+          vm.state.alarm_switch = hmUI.createWidget(hmUI.widget.SLIDE_SWITCH, {
+            ...ALARM_SWITCH, checked: this.state.running,
+           
+            checked_change_func: (slideSwitch, checked) => {
+             if (vm.state.alarm_switch.getProperty(hmUI.prop.CHECKED)===true){
+              
+
+              permissionRequest(vm)
+
+            }else{
+              
+              stopBGService(vm)
+             
+
+            }
+            
+          }}
+          
+      
+          
+    )
+      
+
+
       setProperty(vm.state.staleLabel, hmUI.prop.VISIBLE,  vm.globalData.svg_stale)
 
        console.log("stale visible = " + vm.globalData.svg_stale)
+
+    },
+
+    build() {
+      
+      vm = this;
+      
+      this.initView() 
+      
+      
+      
+      
+
       
     },
     onInit() {
@@ -260,10 +289,11 @@ Page({
       //this.notifyMobile();
       this.state.timeSensor= new Time();
       
+      
     },
     onPause() {
       console.log("page on pause invoke");
-      //sgvLabel.setProperty(hmUI.prop.TEXT,localStorage.getItem('SGV_NOW')); 
+      
     },
     getTimeAgo(time) {
       let timeDiff
@@ -301,18 +331,21 @@ Page({
       setProperty(vm.state.deltaLabel,hmUI.prop.TEXT,vm.globalData.svg_delta);
       setProperty(vm.state.unitsLabel,hmUI.prop.TEXT, vm.globalData.svg_units);
       setProperty(vm.state.staleLabel,hmUI.prop.VISIBLE, vm.globalData.svg_stale);
-      console.log("Stale is: "+vm.globalData.svg_stale)
+      console.log("widgets updated")
 
   },
     onReady() {
-      //this.updateWidgets()
-      vm.state.timeSensor.onPerMinute(() => {
-       
-       this.updateWidgets()     
-      })
       
-      //replace({ url: `${thisFile}` });
-      //setProperty(vm.state.sgvLabel,hmUI.prop.TEXT,localStorage.getItem('SGV_NOW'));
+      /*
+      const option = {
+        url: 'app-service/fetch_service',
+        delay: 200,
+        repeat_type: REPEAT_MINUTE,
+        store:false
+      }
+      const id = set(option)
+     console.log("Set AlarmID: => ",id)*/
+      
     },
     onResume() {
       

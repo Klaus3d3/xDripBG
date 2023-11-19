@@ -22,7 +22,7 @@ export const DATE_TEXT = {
  // h: px(50),
   text_style: text_style.NONE,
   text_size: px(32),
-  align_h: hmUI.align.LEFT,
+  align_h: hmUI.align.CENTER,
   color: 0xffffff,
   //font: 'fonts/DS-DIGI.ttf'
 };
@@ -103,5 +103,14 @@ export const SGV_TREND_IMAGE = {
   w: px(70),
   h: px(70),
 };
-
-
+export const ALARM_SWITCH = {
+x: 160,
+y: 370,
+w: 161,
+h: 96,
+select_bg: 'swON.png',
+un_select_bg: 'swOFF.png',
+slide_src: 'swsl.png',
+slide_select_x: 69,
+slide_un_select_x: 8,
+}
