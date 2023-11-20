@@ -274,15 +274,8 @@ Page({
   },
     onReady() {
       
-      /*
-      const option = {
-        url: 'app-service/fetch_service',
-        delay: 200,
-        repeat_type: REPEAT_MINUTE,
-        store:false
-      }
-      const id = set(option)
-     console.log("Set AlarmID: => ",id)*/
+      this.getDatafromBG();
+      this.updateWidgets();
       
     },
     onResume() {
