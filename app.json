@@ -16,7 +16,8 @@
     "data:os.device.info",
     "device:os.bg_service",   
     "device:os.ble",
-    "device:os.local_storage"
+    "device:os.local_storage",
+    "device:os.alarm"
   ],
   "runtime": {
     "apiVersion": {

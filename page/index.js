@@ -1,18 +1,9 @@
 import hmUI from "@zos/ui";
-import { BasePage } from "@zeppos/zml/base-page";
-import * as appService from "@zos/app-service";
-import { queryPermission, requestPermission } from "@zos/app";
 import { readFileSync } from "@zos/fs";
-const { messageBuilder } = getApp()._options.globalData
-import { showToast } from '@zos/interaction'
 import {niceTime} from "../shared/date"
 import { Time } from "@zos/sensor";
-
-
-
+import * as alrmMgr from '@zos/alarm'
 let vm
-
-
 
 import {
   SERVICE_TEXT,
@@ -20,10 +11,7 @@ import {
   APP_SERVICE_LABEL,SGV_TREND_IMAGE,BG_STALE_RECT,UNITS_TEXT,ALARM_SWITCH,
   SGV_TEXT,DATE_TEXT,DELTA_TEXT
 } from "zosLoader:./style.[pf].layout.js";
-import { notify } from "@zos/notification";
 
-let thisFile = "pages/index";
-const serviceFile = "app-service/bg_service";
 
 
 
@@ -41,71 +29,13 @@ const txtResource = {
 
 
 
-
-const permissions = ["device:os.bg_service"];
-
 function setProperty(w, p, v) {
   w.setProperty(p, v);
 }
 
-function permissionRequest(vm) {
-  const [result2] = queryPermission({
-    permissions,
-  });
-  console.log(`=== start service: ${result2} ===`);
-  if (result2 === 0) {
-    requestPermission({
-      permissions,
-      callback([result2]) {
-        if (result2 === 2) {
-          startBGService(vm,'start');
-        }
-      },
-    });
-  } else if (result2 === 2) {
-    startBGService(vm,'start');
-  }
-}
-function startBGService(vm,action) {
-  console.log(`=== start service: ${serviceFile} ===`);
-  const result = appService.start({
-    url: serviceFile,
-    param: `service=${serviceFile}&action=${action}`,
-    complete_func: (info) => {
-      console.log(`BG-Service Start result: ` + JSON.stringify(info));
-      //hmUI.showToast({ text: `start result: ${info.result}` });
-      // refresh for button status
 
-      if (info.result) {
-        vm.state.running = true;
-        
-      }
-    },
-  });
 
-  if (result) {
-    console.log("startService result: ", result);
-  }
-}
 
-function stopBGService(vm) {
-  console.log(`=== stop service: ${serviceFile} ===`);
-  appService.stop({
-    url: serviceFile,
-    param: `service=${serviceFile}&action=stop`,
-    complete_func: (info) => {
-      console.log(`stopService result: ` + JSON.stringify(info));
-     // hmUI.showToast({ text: `stop result: ${info.result}` });
-      // refresh for button status
-
-      if (info.result) {
-        vm.state.running = false;
-               
-        };
-      
-    },
-  });
-}
 
 function ab2str(buf) {
   return String.fromCharCode.apply(null, new Uint8Array(buf));
@@ -207,11 +137,11 @@ Page({
 
     initView(){
 
-      let services = appService.getAllAppServices();
-      this.state.running = services.includes(serviceFile);
-      
-      
-     // if (!this.state.running)permissionRequest(vm);
+     
+      const alarmID = alrmMgr.getAllAlarms()
+      if (alarmID.length>0) {this.state.running=true} else {this.state.running=false}
+
+    
 
       this.getDatafromBG();
      
@@ -248,14 +178,22 @@ Page({
             checked_change_func: (slideSwitch, checked) => {
              if (vm.state.alarm_switch.getProperty(hmUI.prop.CHECKED)===true){
               
-
-              permissionRequest(vm)
+              const option = {
+                url: 'app-service/bg_service',
+                delay: 100,
+                store: false,
+                repeat_type: alrmMgr.REPEAT_MINUTE,
+              }
+              const id = alrmMgr.set(option)
+              console.log('Alarm set until next restart')
+              //permissionRequest(vm)
 
             }else{
               
-              stopBGService(vm)
-             
-
+              //stopBGService(vm)
+             const alarmID = alrmMgr.getAllAlarms()
+             alarmID.forEach((id) => alrmMgr.cancel(id));
+             console.log('Alarm removed')
             }
             
           }}
