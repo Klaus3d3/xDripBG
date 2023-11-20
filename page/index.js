@@ -263,8 +263,6 @@ Page({
       this.getDatafromBG() 
       vm.state.SVG_TREND_IMG.setProperty(hmUI.prop.MORE,{src: vm.globalData.svg_direction});
       setProperty(vm.state.sgvLabel,hmUI.prop.TEXT, vm.globalData.svg_value);
-      setProperty(vm.state.APP_Label,hmUI.prop.TEXT,txtResource.APP_STATUS[vm.globalData.svg_appStatus]);
-      setProperty(vm.state.BG_Label,hmUI.prop.TEXT,txtResource.BG_STATUS[vm.state.running]);
       setProperty(vm.state.dateLabel,hmUI.prop.TEXT, vm.globalData.svg_date);
       setProperty(vm.state.deltaLabel,hmUI.prop.TEXT,vm.globalData.svg_delta);
       setProperty(vm.state.unitsLabel,hmUI.prop.TEXT, vm.globalData.svg_units);
@@ -274,7 +272,7 @@ Page({
   },
     onReady() {
       
-      this.getDatafromBG();
+    
       this.updateWidgets();
       
     },
